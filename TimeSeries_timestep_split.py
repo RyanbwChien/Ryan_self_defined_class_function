@@ -27,10 +27,6 @@ class TimeSeries:
         self.Y_timesplit = np.array(self.Y_timesplit)
         
         return(self.X_timesplit, self.Y_timesplit)
-    
-           
-        
-
 
 if __name__ == '__main__':
     X = np.random.normal(0,1,(100,5))
