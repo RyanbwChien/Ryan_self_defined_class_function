@@ -84,6 +84,13 @@ from collections import deque, defaultdict
 # =============================================================================
 
 
+# =============================================================================
+# 在拓撲排序（Topological Sort）的機制下，這是一個絕對的鐵律。
+# 如果我們把 「放入 Queue 並執行計算」 當作是「點名」的話：
+# 「上游的源頭（Input/Parent）」絕對不可能比「下游的結果（Output/Child）」先被點到名。
+# 這就是為什麼這個演算法能保證梯度計算正確的核心原因。
+# =============================================================================
+
 class Variable:
     def __init__(self, value, parent=None, grad_fn=None):
         self.value = np.array(value, dtype=float)
@@ -103,7 +110,7 @@ class Variable:
         
         # ***記錄每個變數被使用的次數 (Dependency Count)
         grad_counts = defaultdict(int)
-        
+        # grad_counts = dict()
         # 用一個簡單的堆疊遍歷圖，計算每個 parent 被引用的次數
         # 這一步就像是 TF/PyTorch 在 "編譯/分析" 計算圖
         nodes_to_visit = [self]
@@ -138,7 +145,10 @@ class Variable:
             for p, gf in zip(node.parent, node.grad_fn):
                 # 1. 計算傳遞給 parent 的梯度
                 d_p = gf(node.grad)
-                
+                # 在數學和程式慣例中：
+                # d = Derivative (導數/微分) 或 Delta (變化量)
+                # p = Parent (父節點)
+                # 所以 d_p 代表的是：「從當前節點 (node) 回傳給父節點 (p) 的那一份梯度貢獻」。
                 # --- 加入廣播修正 (Broadcasting Fix) ---
                 if d_p.shape != p.grad.shape:
                      while d_p.ndim > p.grad.ndim:
