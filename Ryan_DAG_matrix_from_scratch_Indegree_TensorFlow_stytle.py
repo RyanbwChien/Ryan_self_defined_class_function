@@ -2,6 +2,7 @@
 """
 Created on Mon Dec 22 16:52:40 2025
 
+
 @author: USER
 """
 
@@ -83,7 +84,7 @@ class GradientTape:
         grad_counts = defaultdict(int)
         for op in self.ops:
             for x in op['inputs']:
-                grad_counts[x.id] += 1
+                grad_counts[x.id] += 1 # producer_map 是計output但grad_counts是計INPUT
                 
         # 3. 初始化梯度字典 (類似 TF 的不沾鍋設計，不汙染 Tensor 本身)
         grads = defaultdict(lambda: 0)
@@ -132,7 +133,8 @@ class GradientTape:
                 
                 # 累加梯度 (Gradient Accumulation)
                 # 注意：這裡我們存在 grads 字典裡，不寫入 x.grad
-                grads[x.id] += g
+                grads[x.id] += g #只會把梯度加在上一層元素，
+                                 #對哪一變數去微分就是去計算函數的梯度，然後要給那個變數去做梯度下降
                 
                 # 減少依賴計數
                 grad_counts[x.id] -= 1
