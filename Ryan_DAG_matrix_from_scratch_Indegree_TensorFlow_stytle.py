@@ -160,7 +160,7 @@ def tf_matmul(a, b):
     out = Tensor(val)
     
     # 2. 錄影 (如果有 Tape 開著)
-    if _CURRENT_TAPE:
+    if _CURRENT_TAPE: # 只有實際建立實體的當下GradientTape() 才會設成自己
         _CURRENT_TAPE.record_op("MatMul", [a, b], out)
     return out
 
@@ -221,6 +221,16 @@ B = Tensor(np.random.normal(0,1,(3,3)), name="B")
 print("X shape:", X.value.shape)
 
 # 2. 開始錄影 (Forward Pass)
+
+"""
+1. 在建立實體的當下GradientTape()
+2. 透過__enter__ 將外面的全域變數 global _CURRENT_TAPE 把設成自己 CURRENT_TAPE = self
+3. 當在呼叫自訂運算函數時，裡面會執行_CURRENT_TAPE.record_op("Add", [a, b], out)
+     就是將global _CURRENT_TAPE(GradientTape()) 呼叫 record_op 方法把 自己的屬性 
+     self.ops = [] # 錄影帶：依序記錄發生的操作
+4. grads = tape.gradient(Loss, [X, W, B])    
+"""
+
 with GradientTape() as tape:
     # 模擬: Y = (X @ W) + B
     Z = tf_matmul(X, W)
