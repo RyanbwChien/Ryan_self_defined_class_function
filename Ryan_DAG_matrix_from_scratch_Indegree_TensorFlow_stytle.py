@@ -92,13 +92,29 @@ class GradientTape:
         
         # 4. 準備 Queue (Kahn's Algorithm)
         # 從 Target (Loss) 開始
+        
+# =============================================================================
+#         在程式碼中：queue = deque([target])
+#         在一開始，全宇宙只有 Loss 這個節點在 Queue 裡。
+#         其他的節點（例如中間層 
+#         Y
+#         Y
+#         、輸入層 
+#         X
+#         X
+#         ），雖然都在圖上，但它們的 grad_counts 都大於 0（因為它們都被別人用過）。
+#         只有 Loss 的 grad_counts 是 0（因為沒人把 Loss 當輸入拿去算別的東西，它是終點）。
+#         所以，第一步絕對、一定、只能是處理 Loss。這保證了順序的頭是對的。
+# =============================================================================
+        
+        # 一開始就強制起始位置是最後的函數
         queue = deque([target])
         
         # 5. 開始反向拓撲遍歷
         while queue:
             # Pop 出當前節點 (這代表它的梯度已經完全累加完畢)
             current_tensor = queue.popleft()
-            current_grad = grads[current_tensor.id]
+            current_grad = grads[current_tensor.id]  #np.ones_like(target.value) 最一開始
             
             # 找到是誰產生了這個 Tensor (Producer)
             if current_tensor.id not in producer_map:
@@ -122,7 +138,7 @@ class GradientTape:
                 input_grads = [input_grads]
             
             # --- 累加梯度並處理 Queue ---
-            for x, g in zip(inputs, input_grads):
+            for x, g in zip(inputs, input_grads): #目前位置的對組成變數維分 並記錄到上一層變數
                 # 廣播修正 (Broadcasting Fix)
                 if g.shape != x.value.shape:
                     while g.ndim > x.value.ndim:
@@ -144,6 +160,7 @@ class GradientTape:
                     queue.append(x)
                     
         # 6. 最後只回傳使用者要的那些參數的梯度
+        # grads = tape.gradient(current_loss, self.params) 仿造正統TENSORFLOW 只是去指定使用者要的那些參數的梯度?
         return [grads[s.id] for s in sources]
 
 # 全域變數，用來存當前正在錄影的 Tape
