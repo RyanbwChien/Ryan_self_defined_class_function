@@ -150,7 +150,8 @@ class GradientTape:
                 # 累加梯度 (Gradient Accumulation)
                 # 注意：這裡我們存在 grads 字典裡，不寫入 x.grad
                 grads[x.id] += g #只會把梯度加在上一層元素，
-                                 #對哪一變數去微分就是去計算函數的梯度，然後要給那個變數去做梯度下降
+                                 #對哪一變數去微分就是去計算函數的梯度，然
+                                 # 後要給那個變數去做梯度下降
                 
                 # 減少依賴計數
                 grad_counts[x.id] -= 1

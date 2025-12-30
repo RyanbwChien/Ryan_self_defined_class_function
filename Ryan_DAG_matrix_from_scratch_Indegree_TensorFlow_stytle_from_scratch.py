@@ -86,11 +86,14 @@ class Tensor:
         self.name = name
         self.id = id(self)
     def __repr__(self):
-        return f"Tesnor(shape = {self.value.shaoe}, id={self.id})"
+        return f"Tesnor(shape = {self.value.shape}, id={self.id})"
         
         
-        
-        
+class Gradient_Tape:
+    def __init__(self):
+        self.ops = []
+        self.active = True
+    def __     
         
         
         
