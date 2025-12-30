@@ -92,9 +92,38 @@ class Tensor:
 class Gradient_Tape:
     def __init__(self):
         self.ops = []
+        self.active = False
+    def __enter__(self):
         self.active = True
-    def __     
+        global _CURRENT_TAPE
+        _CURRENT_TAPE = self 
+        return self #當你希望在 with 語句中取得並操作這個上下文管理器實例時。
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.active = False
+        global _CURRENT_TAPE
+        _CURRENT_TAPE = None
         
+    def record_op(self, op_name, inputs, output):
+        self.ops.append({
+            "op_name":op_name,
+            "inputs":inputs,
+            "output":output            
+            })
+    def gradient(self,target, sources):
+        """
+        target : loss (Tensor)
+        sources : list of params to update (list of Tensors)
+        """
+        
+        
+        
+def tf_matmul(a,b):
+    val = a.value @ b.value
+    out = Tensor(val)    
+    
+    if _CURRENT_TAPE:
+        _CURRENT_TAPE.record_op("MatMul", [a,b], out)
+    return out
         
         
         
