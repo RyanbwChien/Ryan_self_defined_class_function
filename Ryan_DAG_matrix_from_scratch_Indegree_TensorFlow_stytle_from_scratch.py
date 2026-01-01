@@ -315,12 +315,6 @@ for epoch in range(epochs):
     print(loss.value)
 
 
-
-
-
-
-
-
 grad_W, grad_B = grads
 print("\n--- Backward 完成 ---")
 
