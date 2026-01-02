@@ -112,7 +112,7 @@ class Gradient_Tape:
         self.active = False
         global _CURRENT_TAPE
         _CURRENT_TAPE = None
-        
+        # 當離開當次with Gradient_Tape() as tape 呼叫 __exit__ _CURRENT_TAPE將不在記錄運算並且將其淨空
     def record_op(self, op_name, inputs, output):
         self.ops.append({
             "op_name":op_name,
@@ -224,6 +224,13 @@ def tf_truediv(a,b):
         _CURRENT_TAPE.record_op("Truediv", [a,b], out)
     return out 
 
+def tf_reduce_sum(a):
+    val = np.sum(a.value)
+    out = Tensor(val)
+    if _CURRENT_TAPE:
+        _CURRENT_TAPE.record_op("ReduceSum", [a], out)
+    return out
+
 # =============================================================================
 # 偏微分不是對「表達式」微分，
 # 而是對「函數在座標方向上的變化率」做定義。
@@ -266,20 +273,37 @@ def grad_truediv(grad, inputs):
     grad_A = grad * 1/B.value
     grad_B = grad * -A.value *1/(B.value)**2
     return grad_A, grad_B
+
+@register_gradient("ReduceSum")
+def grad_reduce_sum(grad, inputs):
+    A, = inputs
+    return grad * np.ones_like(A.value)
         
 X = Tensor(np.random.normal(0,1,(10,3)),"X")
 W = Tensor(np.random.normal(0,1,(3,3)),"W")
-B = Tensor(np.random.normal(1.5,1,(10,3)),"B")
+B = Tensor(np.random.normal(1.5,1,(1,3)),"B") # Parameter 的 shape 永遠不含 batch 維度
+W.value
 
-Y = Tensor(X.value @ ((np.array(range(9)).reshape(3,3) +1)/10) + (np.array(range(30)).reshape(10,3) +1)/10) 
+W_act = np.random.normal(0,1,(3,3))
+B_act = np.random.normal(0,1,(1,3))
+Y = Tensor(X.value @ W_act + B_act) 
 Y.value
 _CURRENT_TAPE = None
 
-def loss_fcn(Y,Y_pred):
-    result = tf_truediv(tf_pow(tf_sub(Y,Y_pred),
-                               Tensor(2)),
-                               Tensor(Y.value.shape[0]))
-    return result
+# =============================================================================
+# def loss_fcn(Y,Y_pred):
+#     result = tf_truediv(tf_pow(tf_sub(Y,Y_pred),
+#                                Tensor(2)),
+#                                Tensor(Y.value.shape[0]))
+#     return result
+# =============================================================================
+def loss_fcn(Y, Y_pred):
+    diff = tf_sub(Y, Y_pred)
+    sq   = tf_pow(diff, Tensor(2))
+    total = tf_reduce_sum(sq)
+    mean  = Tensor(total.value / Y.value.shape[0])  # 用數字除，不要 Tensor
+    return mean
+
 
 def optimize(grads,param,lambdas):
     para_update = []
@@ -297,7 +321,7 @@ def optimize(grads,param,lambdas):
 # =============================================================================
 
 
-epochs = 5000
+epochs = 1000
 
 for epoch in range(epochs):
     

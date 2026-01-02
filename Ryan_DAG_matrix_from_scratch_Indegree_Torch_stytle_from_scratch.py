@@ -9,12 +9,14 @@ Created on Wed Dec 31 22:24:41 2025
 import numpy as np
 from collections import deque, defaultdict
 class Tensor:
-    def __init__(self,value,inputs=[],grad_func=[]):
+    def __init__(self,value,inputs=[],grad_func=[],require_grad=True):
         self.value = np.array(value,dtype=float)
         self.inputs = inputs
         self.grad_func = grad_func
         self.grad = np.zeros_like(self.value)
-        
+        self.require_grad = require_grad
+    def detach(self):
+        return Tensor(self.value, requires_grad=False)    
     def backward(self, grad=None):
         if grad is None:
             grad = np.ones_like(self.value)
@@ -41,6 +43,8 @@ class Tensor:
                 continue
             
             for i,f in zip(current_node.inputs, current_node.grad_func):
+                if not i.require_grad:
+                    continue
                 grad_input = f(current_node.grad) # 都是numpy array做運算
                 
                 if grad_input.shape != i.grad.shape:
@@ -79,7 +83,7 @@ class Tensor:
     
     
 # 測試
-X = Tensor(np.random.normal(0,1,(3,3)))     
+X = Tensor(np.random.normal(0,1,(3,3)), require_grad=False)     
 B = Tensor(np.random.normal(0,1,(3,3)))      
 
 # 複雜一點的圖：X 被用了兩次 (Diamond Pattern)
@@ -88,7 +92,7 @@ Y.value
 Y.backward()
 
 print("執行成功，沒有遞迴")
-print("X 的梯度:\n", X.grad)    
+print("X 的梯度:\n", B.grad)    
     
     
     

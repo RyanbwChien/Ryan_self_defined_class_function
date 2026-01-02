@@ -70,7 +70,7 @@ class GradientTape:
         for op_name, inputs, output in reversed(self.history):
             if output.id in grads:
                 out_grad = grads[output.id]
-                in_grads = _GRAD_MAP[op_name](out_grad, inputs)
+                in_grads = _GRAD_MAP[op_name](out_grad, inputs) #求變數偏微梯度
                 if not isinstance(in_grads, tuple): in_grads = (in_grads,)
                 
                 for x, g in zip(inputs, in_grads):
@@ -82,7 +82,7 @@ class GradientTape:
 # --- 測試：現在看起來跟 PyTorch 幾乎一樣了 ---
 X = Tensor(np.random.randn(3, 3))
 W = Tensor(np.random.randn(3, 3))
-B = Tensor(np.random.randn(3, 3))
+B = Tensor(np.random.randn(1, 3))
 
 with GradientTape() as tape:
     # 這裡的寫法現在非常簡潔！
