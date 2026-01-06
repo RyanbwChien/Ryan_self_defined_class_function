@@ -7,16 +7,37 @@ Created on Thu Jan  1 01:10:47 2026
 
 import numpy as np
 from collections import deque, defaultdict
+"""
+只有在「子類別有覆寫 __init__」時，才需要呼叫 super().__init__()
+沒有覆寫 __init__ → Python 會自動用父類別的 __init__
+"""
 
 # 1. 統一的梯度註冊中心
 _GRAD_MAP = {}
+
+class Optimizer:
+    def __init__(self, lr):
+        self.lr = lr
+
+    def apply_gradients(self, grads_and_vars):
+        for grad, var in grads_and_vars:
+            var.value -= self.lr * grad
+class SGD(Optimizer):
+    # def __init__(self,lr):
+    #     super(SGD,self).__init__(lr)
+    def apply_gradients(self, grads_and_vars):
+        for grad, var in grads_and_vars:
+            var.assign_sub(self.lr * grad)
+
+
+
 
 def register_grad(op_name):
     def decorator(f):
         _GRAD_MAP[op_name] = f
         return f
     return decorator
-
+   
 class Tensor:
     def __init__(self, value):
         self.value = np.array(value, dtype=float)
@@ -28,6 +49,9 @@ class Tensor:
     def __mul__(self, other): return apply_op("Mul", self, other)
     def __sub__(self, other): return apply_op("Sub", self, other)
 
+class Variable(Tensor):
+    def assign_sub(self, delta):
+        self.value -= delta
 # 全域 Tape 指針
 _CURRENT_TAPE = None
 

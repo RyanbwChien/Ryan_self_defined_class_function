@@ -1,8 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-Created on Wed Dec 31 22:24:41 2025
-
-@author: Ryan
+為什麼 Optimizer 絕對不能寫在 Tensor 裡？
+這不是習慣問題，是責任分離（Separation of Concerns）。
+① Tensor 不應該知道「如何被更新」
+Tensor 的責任只有三件事：
+1️⃣ 存 value
+2️⃣ 存 grad
+3️⃣ 知道怎麼把 grad 往前傳
 """
 
 
@@ -46,10 +50,19 @@ class Tensor:
                 if not i.require_grad:
                     continue
                 grad_input = f(current_node.grad) # 都是numpy array做運算
-                
+                # Backward（鏈式法則）是加總
+# =============================================================================
+#                 ∂𝑦/∂𝑥=∂𝑓1/∂𝑥+∂𝑓2/∂𝑥
+#             	​  x
+#                  / \
+#                f1   f2
+#                  \ /
+#                   y = f1(x) + f2(x)
+# =============================================================================
+
                 if grad_input.shape != i.grad.shape:
                      while grad_input.ndim > i.grad.ndim:
-                        grad_input = grad_input.sum(axis=0)
+                        grad_input = grad_input.sum(axis=0) # autograd 只負責「數學正確的導數」
                      for ii, dim in enumerate(i.grad.shape):
                         if dim == 1 and grad_input.shape[i] != 1:
                             grad_input = grad_input.sum(axis=ii, keepdims=True)
