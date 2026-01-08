@@ -90,6 +90,9 @@ def register_gradient(op_name):
         return func #重點包裝器還是回傳原本自己的函數
     return wrapper
 
+
+# 即使 OUT 是 Tensor，只要它的祖先有 Variable，它的 ID 就會被記錄，梯度就能傳得回去。 這就是為什麼你的代碼能動的原因！
+
 class Tensor:
     def __init__(self,value, name=None):
         self.value = np.array(value, dtype=float)
@@ -97,11 +100,20 @@ class Tensor:
         self.id = id(self)
     def __repr__(self):
         return f"Tesnor(shape = {self.value.shape}, id={self.id})"
-        
+
+class Variable(Tensor):
+    pass
+
+Variable.__name__
+
+object.__dict__
+
+repr(Variable(5))
         
 class Gradient_Tape:
     def __init__(self):
         self.ops = []
+        self.watched_ids = set() # 這裡紀錄所有需要追蹤梯度的 Tensor ID
         self.active = False
     def __enter__(self):
         self.active = True
@@ -301,7 +313,8 @@ def loss_fcn(Y, Y_pred):
     diff = tf_sub(Y, Y_pred)
     sq   = tf_pow(diff, Tensor(2))
     total = tf_reduce_sum(sq)
-    mean  = Tensor(total.value / Y.value.shape[0])  # 用數字除，不要 Tensor
+    batch_size = Tensor(np.array([Y.value.shape[0]]))
+    mean  = tf_truediv(total,batch_size)
     return mean
 
 
@@ -321,7 +334,7 @@ def optimize(grads,param,lambdas):
 # =============================================================================
 
 
-epochs = 1000
+epochs = 500
 
 for epoch in range(epochs):
     
@@ -341,9 +354,13 @@ for epoch in range(epochs):
 
 grad_W, grad_B = grads
 print("\n--- Backward 完成 ---")
-
-print("Gradient of W:\n", grad_W)
+# 訓練到最後本來梯度就是要靠近0
+print("Gradient of W:\n", grad_W) 
 print("Gradient of B:\n", grad_B)
+print("W_act:\n", W_act)
+print("B_act:\n", B_act)
+print("W:\n", W.value)
+print("B:\n", B.value)
 
 # =============================================================================
 # # 驗證形狀是否正確

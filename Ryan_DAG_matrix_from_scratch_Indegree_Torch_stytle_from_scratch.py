@@ -9,11 +9,12 @@ Tensor 的責任只有三件事：
 3️⃣ 知道怎麼把 grad 往前傳
 """
 
-
+#所以PYTORCH是 如果我有任意一個INPUT 的REQURE_GRAD是TRUE就會讓我的OUTPUT 的REQURE_GRAD也是TRUE嗎
+# 所以，為了保證「只要有一個祖先需要梯度，後代就能把梯度傳回去」，Output 必須繼承「需要梯度」的這個屬性。
 import numpy as np
 from collections import deque, defaultdict
 class Tensor:
-    def __init__(self,value,inputs=[],grad_func=[],require_grad=True):
+    def __init__(self,value,inputs=[],grad_func=[],require_grad=False):
         self.value = np.array(value,dtype=float)
         self.inputs = inputs
         self.grad_func = grad_func
@@ -23,7 +24,7 @@ class Tensor:
         return Tensor(self.value, requires_grad=False)    
     def backward(self, grad=None):
         if grad is None:
-            grad = np.ones_like(self.value)
+            grad = np.ones_like(self.value) # 最外層矩陣內有幾個元素 對每個元素偏微 就是1 所以已經是對每個元素微分
         self.grad =  grad  
         grad_counts = defaultdict(int)    
         
@@ -84,7 +85,10 @@ class Tensor:
     def __add__(self, other):
         if not isinstance(other, Tensor): 
             other = Tensor(other)
-        return Tensor(self.value + other.value, inputs=[self, other], grad_func=[lambda g: g, lambda g: g])
+        # 正統作法
+        out_require_grad = self.require_grad or other.require_grad
+            
+        return Tensor(self.value + other.value, inputs=[self, other], grad_func=[lambda g: g, lambda g: g],require_grad=out_require_grad)
     def __radd__(self, other): 
         return self.__add__(other)
     def __mul__(self, other):
