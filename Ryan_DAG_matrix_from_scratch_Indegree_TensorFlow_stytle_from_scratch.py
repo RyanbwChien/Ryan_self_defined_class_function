@@ -79,6 +79,12 @@ Created on Sun Dec 28 21:13:08 2025
 # 
 # =============================================================================
 
+
+# watch 決定的是「我要不要結果」
+# 不是「你能不能參與計算」
+# 沒有 watch 的變數仍然會參與 forward 與 backward 的數值計算，
+# 只是其梯度不會被回傳，也不會被用來更新參數。
+
 import numpy as np
 from collections import deque, defaultdict
 
@@ -102,13 +108,8 @@ class Tensor:
         return f"Tesnor(shape = {self.value.shape}, id={self.id})"
 
 class Variable(Tensor):
-    pass
-
-Variable.__name__
-
-object.__dict__
-
-repr(Variable(5))
+    def __init__(self,value, name=None):
+        super(Variable,self).__init__(value, name=None)
         
 class Gradient_Tape:
     def __init__(self):
@@ -125,12 +126,21 @@ class Gradient_Tape:
         global _CURRENT_TAPE
         _CURRENT_TAPE = None
         # 當離開當次with Gradient_Tape() as tape 呼叫 __exit__ _CURRENT_TAPE將不在記錄運算並且將其淨空
+    
+    # ✅ 最接近 TensorFlow eager tape 的版本
+    # forward：全記
     def record_op(self, op_name, inputs, output):
+        for x in inputs:
+            if isinstance(x, Variable):
+                self.watched_ids.add(x.id)
         self.ops.append({
             "op_name":op_name,
             "inputs":inputs,
             "output":output            
             })
+        
+    def watch(self,inputs):
+        self.watched_ids.add(id(inputs))
     def gradient(self,target, sources):
         """
         全部運算都做完 才會在對loss fcn作微分 tape.gradient(Loss, [X, W, B]) 
@@ -186,7 +196,7 @@ class Gradient_Tape:
                 
                 if grad_counts[x.id] == 0:
                     queue.append(x)
-        return [ grads[s.id] for s in sources]
+        return [ grads[s.id]  if s.id in self.watched_ids else None for s in sources]
             
 def tf_matmul(a,b):
     val = a.value @ b.value
@@ -292,8 +302,8 @@ def grad_reduce_sum(grad, inputs):
     return grad * np.ones_like(A.value)
         
 X = Tensor(np.random.normal(0,1,(10,3)),"X")
-W = Tensor(np.random.normal(0,1,(3,3)),"W")
-B = Tensor(np.random.normal(1.5,1,(1,3)),"B") # Parameter 的 shape 永遠不含 batch 維度
+W = Variable(np.random.normal(0,1,(3,3)),"W")
+B = Variable(np.random.normal(1.5,1,(1,3)),"B") # Parameter 的 shape 永遠不含 batch 維度
 W.value
 
 W_act = np.random.normal(0,1,(3,3))
