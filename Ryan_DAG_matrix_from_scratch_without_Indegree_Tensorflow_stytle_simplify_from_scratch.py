@@ -37,7 +37,7 @@ def register_grad(op_name):
         _GRAD_MAP[op_name] = f
         return f
     return decorator
-   
+
 class Tensor:
     def __init__(self, value):
         self.value = np.array(value, dtype=float)
