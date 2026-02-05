@@ -60,7 +60,8 @@ class Tensor:
             if id(current_node) not in visited_nodes:
                 visited_nodes.add(id(current_node))
                 for i in current_node.inputs:
-                    grad_counts[id(i)] += 1
+                    grad_counts[id(i)] += 1 #是加在INPUT不是OUTPUT
+                    #計算入度最主要是要避免菱形，就是有一個父節點有位給多的子結點
                     node_to_visit.append(i)
         
         # 2. 梯度累加字典
