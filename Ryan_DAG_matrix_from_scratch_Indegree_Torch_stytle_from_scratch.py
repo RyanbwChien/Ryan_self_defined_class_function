@@ -154,7 +154,27 @@ class Tensor:
         return Tensor(self.value * other.value, inputs=[self, other], grad_func=[lambda g: g * other.value, lambda g: g * self.value])
     def __rmul__(self, other): 
         return self.__mul__(other)
+
+# =============================================================================
+# 你現在的模型是：
+# PyTorch 還是建 graph，只是沒有 grad_func
+# 實際是：
+# PyTorch 連 graph 都不建
+# =============================================================================
     
+# =============================================================================
+# 📌 回到你的 matmul 類比
+# 如果你要讓你的 mini autograd 行為像 PyTorch：
+# 你應該這樣寫：
+# if not (self.requires_grad or other.requires_grad):
+#     return Tensor(out, requires_grad=False)   # 不存 inputs 不存 grad_func
+# # 只有需要梯度才建 graph
+# return Tensor(out,
+#               inputs=[self, other],
+#               grad_func=[...],
+#               requires_grad=True)
+# 
+# =============================================================================
     
 # 測試
 X = Tensor(np.random.normal(0,1,(3,3)), require_grad=False)     
