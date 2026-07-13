@@ -175,13 +175,6 @@ print("W gradient shape:", grads[0].shape)
 # 我們先處理 Add：算出 Temp_Res 的梯度。
 # 再處理 MatMul：這時 Temp_Res 的梯度已經被上一步算好了。
 # 即使是 Diamond Pattern (
-# Y
-# =
-# X
-# ⋅
-# X
-# +
-# X
 # Y=X⋅X+X
 # )：
 # Tape 錄製：op1: X*X -> A, op2: A+X -> Y
@@ -192,12 +185,8 @@ print("W gradient shape:", grads[0].shape)
 #  拿到一份梯度。
 # 處理 op1 (Mul)：X 拿到第二份梯度（累加）。
 # 結果： 雖然 
-# X
-# X
-#  被用了兩次，但因為我們是按 Tape 倒著走，我們保證了 
-# X
-# X
-#  所有的「下游」節點（即 
+# X 被用了兩次，但因為我們是按 Tape 倒著走，我們保證了 
+#X 所有的「下游」節點（即 
 # A
 # A
 #  和 

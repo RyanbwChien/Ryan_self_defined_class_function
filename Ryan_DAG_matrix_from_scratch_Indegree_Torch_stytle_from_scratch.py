@@ -83,6 +83,7 @@ class Tensor:
                     # 只有 Leaf Node 且需要梯度，才把最終結果寫入 .grad
                     current_node.grad = current_total_grad
                 continue
+            # (💡 隱藏細節：其實在你目前的寫法中，葉子節點是寫 current_node.grad = current_total_grad (覆蓋)，而不是 += (累加)，所以你不寫 zero_grad 剛好不會爆炸。但真正的 PyTorch 是用 += 累加梯度的，為了養成好習慣與擴充性，我們還是把它加上去！)
             
             # 如果梯度已經是 0，且不是起點，則不需要再往下傳遞計算（優化效能）
             if np.all(current_total_grad == 0) and current_node is not self:
