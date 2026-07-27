@@ -77,6 +77,9 @@ def apply_ops(op_name,inputs:list[Variable,Variable]):
 利用裝飾器在最一開始定義函數時 就所有op_name 對應的微分函數，包到全域變數_Grad_Map{}字典
 之後再 Current_tape ( GradientTape() 實體物件 就可以利用每次ops 紀錄 op_name 利用最外面包的全域變數
 _Grad_Map{}字典回傳當次ops，反向傳播微分函數
+Decorator 的真正目的
+定義函數
+同時完成註冊
 """
 _Grad_Map = {}
 
