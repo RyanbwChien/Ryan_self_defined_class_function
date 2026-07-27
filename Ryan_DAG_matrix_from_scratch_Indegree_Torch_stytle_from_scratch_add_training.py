@@ -98,7 +98,33 @@ class Tensor:
         # 1. 建立入度表
         grad_counts = defaultdict(int)    
         node_to_visit = [self]
-        visited_nodes = set()
+        visited_nodes = set()        
+# =============================================================================
+#         目的只有一個：
+# 
+#         避免同一個 Tensor 節點被展開兩次。
+#         
+#         先看沒有這兩行會怎樣。
+#         
+#         假設：
+#         
+#         x = Tensor(...)
+#         y = x + x
+#         z = y + y
+#         
+#         計算圖：
+#         
+#                 z
+#                / \
+#               y   y
+#              / \
+#             x   x
+#         
+#         注意：
+#         
+#         y 是同一個物件，不是兩個 y。
+# =============================================================================      
+                
         while node_to_visit:
             current_node = node_to_visit.pop()
             if id(current_node) not in visited_nodes:
@@ -227,6 +253,8 @@ if __name__ == "__main__":
         # 你的 Kahn's Algorithm 將在這裡完美計算出 W 和 B 的梯度
         loss.backward()
 
+
+        loss.__dict__
         # 【步驟 4：更新參數 Optimizer Step】
         # ⚠️ 核心觀念：我們直接操作 numpy 陣列 (.value)
         # 這樣就不會觸發 Tensor 的 __sub__ 而建立多餘的計算圖
