@@ -39,8 +39,15 @@ class Ryan_torch_module:
             
         for module in self._modules.values(): 
             yield from module.parameters() 
-        
-                
+
+
+class Linear(Ryan_torch_module):
+    pass
+
+print(isinstance(Linear(), Ryan_torch_module))     
+print(isinstance(Linear(), Linear))    
+print(isinstance(Linear, Linear))                    
+print(isinstance(Linear, object))
 # loss.backward() Tensor DAG 需要避免重複計算
 def parameters(loss): 
     params = [] 
