@@ -5,6 +5,20 @@ Created on Wed Jul  8 18:29:03 2026
 @author: USER
 """
 
+# =============================================================================
+# 定一一個父類FUNCTION 然後裡面有實作類別方法APPLY 跟實體方法FORWARD BACKWARD 只是先寫說屬於他的子類要定義實作
+# 
+# 然後又定義每個運算函數的子類別，裡面會繼承父類別的類別方法APPLY(我不知道連類別方法都可以繼承?) 然後會定義FORWARD BACKWARD屬於子類各自的方法複寫父類
+# 
+# 然後再TENSOR裡面做任何運算都是在呼叫 FUNCTION類別的類別方法 然後裡面帶入self other
+# 
+# 然後其實self只是將TENSOR這個實體當作參數帶入類別方法 實際上呼叫類別方法他自動會將類別當第一個參數帶入
+# 
+# 然後我覺得最厲害的是 他在類別方法裡面 還做了 用自己的類別建立實體ctx= CLS(*INPUT)
+# 
+# 建立實體後 才當各自儲存每個實體自己的實體屬性(這個運算是由哪兩的TENSOR所組成 之後給計算入度用，但也好像僅此而已?) 還有直接在裡面呼叫自己的實體方法得到計算結果
+# =============================================================================
+
 import numpy as np
 from collections import defaultdict, deque
 
@@ -158,13 +172,14 @@ class Tensor:
             func = curr_tensor.grad_fn
             
             # 呼叫 Function 的 backward 取得對 inputs 的偏微分
-            grads_wrt_inputs = func.backward(current_grad)
+            grads_wrt_inputs = func.backward(    )
             
             # 確保返回的是 tuple (即使只有一個 input)
             if not isinstance(grads_wrt_inputs, tuple):
                 grads_wrt_inputs = (grads_wrt_inputs,)
 
             # 將梯度派發給輸入的 Tensors
+            # 重點func.inputs是為什麼每次運算要實體化的原因
             for inp, g_inp in zip(func.inputs, grads_wrt_inputs):
                 if isinstance(inp, Tensor) and inp.requires_grad:
                     
