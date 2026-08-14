@@ -18,6 +18,8 @@ import numpy as np
 # 直接使用python 內建numpy module 可以快速做矩陣運算
 import tensorflow as tf
 
+tf.Tensor(5.0)
+
 
 #%%
 class Tensor:

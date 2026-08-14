@@ -50,6 +50,9 @@ class Tensor:
     
     def __matmul__(self, other):
         # C = A@B 此時  self = A other = B self 不是 C
+        # matmul 的「最後兩個維度」必須符合矩陣乘法 (m,n) @ (n,p)；最後兩維不會靠 broadcasting 解決。
+        # 但最後兩維之前的 batch dimensions，可以做 broadcasting。
+        
         if not isinstance(other, Tensor):
             other = Tensor(other)
         return Tensor(value=self.value @ other.value,
@@ -57,7 +60,27 @@ class Tensor:
                       grad_fn = lambda outer_grad: [outer_grad @ other.value.T, 
                                                     self.value.T @ outer_grad]
                       )
-           
+    
+    def __mul__(self, other):
+        # C = A@B 此時  self = A other = B self 不是 C
+        
+        # 純 Python scalar（例如 3）通常不是計算圖中由前一個運算產生的 Tensor 節點，
+        # 而是被當成某個運算的常數輸入；因此反向即使可以計算對它的偏導，也沒有更前面的計算圖可以繼續傳。
+        
+        # 就算讓純係數算梯度也不會對其他要算梯度的有任何影響，只是如果不需要算，就在系統中部用讓他算減少計算成本
+        
+        if not isinstance(other, Tensor):
+            other = Tensor(other)
+        return Tensor(value=self.value * other.value, # 這邊使用numpy 內建的__mul__方法 內建會幫你向前時做 broadcasting 
+                      inputs=[self,other],
+                      # 反向傳播，這邊使用numpy 內建的__mul__方法 內建會幫你向前時做 broadcasting，後續再做梯度更新的時候
+                      grad_fn = lambda outer_grad: [outer_grad * other.value, 
+                                                    self.value * outer_grad]
+                      )
+    
+
+    
+    
     def backward(self):
         # 利用 kahn's algorithm DAG
         
